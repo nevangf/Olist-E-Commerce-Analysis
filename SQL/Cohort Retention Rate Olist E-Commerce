@@ -1,0 +1,56 @@
+with first_purchase_data as
+  (
+    SELECT
+      Customer_Unique_ID,
+      MIN(DATE_TRUNC(DATE(Order_Purchase_Date), MONTH)) as first_purchase_month
+    FROM `revou-gfp-365510.Olist.Olist_Clean_Data_Final`
+    GROUP BY 1
+  ),
+  cohort_size as
+  (
+    SELECT
+      first_purchase_month,
+      COUNT(DISTINCT Customer_Unique_ID) as Number_Customers
+    FROM first_purchase_data
+    GROUP BY 1
+    ORDER BY 1
+  ),
+  compile_data as
+  (
+    SELECT 
+      DISTINCT act.Customer_Unique_ID,
+      DATE_TRUNC(DATE(Order_Purchase_Date), MONTH) as activity_month,
+      first_purchase_month
+  FROM `revou-gfp-365510.Olist.Olist_Clean_Data_Final` as act
+  JOIN first_purchase_data as fst
+    ON act.Customer_Unique_ID = fst.Customer_Unique_ID
+  ORDER BY 2
+  ),
+  raw_data as
+  (
+    SELECT
+      *,
+      DATE_DIFF(activity_month, first_purchase_month, month) as period
+    FROM compile_data
+  ),
+  summary as
+  (
+    SELECT
+      first_purchase_month,
+      period,
+      COUNT(DISTINCT Customer_Unique_ID) as Total_Customers
+    FROM raw_data
+    GROUP BY 1,2
+    ORDER BY 1,2
+  )
+SELECT 
+  s.first_purchase_month,
+  FORMAT_DATE('%B %Y', s.first_purchase_month) as CohortMonth,
+  Number_Customers,
+  s.Period,
+  s.Total_Customers,
+  ROUND((Total_Customers/cs.Number_Customers)*100,2) || ' %' as Percentage
+FROM summary as s
+LEFT JOIN cohort_size as cs
+  ON s.first_purchase_month = cs.first_purchase_month
+ORDER BY 1,2,4
