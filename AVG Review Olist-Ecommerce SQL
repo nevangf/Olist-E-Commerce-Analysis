@@ -1,0 +1,51 @@
+WITH master_data as 
+  (
+    SELECT 
+      customer_id,
+      customer_city,
+      customer_state,
+      order_id,
+      order_status,
+      EXTRACT(date from order_purchase_timestamp) as order_purchase_date,
+      EXTRACT(date from order_delivered_customer_date) as order_delivered_customer_date,
+      EXTRACT(date from order_estimated_delivery_date) as order_estimated_delivery_date,
+      product_category_name,
+      price,
+      freight_value,
+      payment_type,
+      payment_installments,
+      payment_value,
+      review_score,
+      review_comment_title,
+      EXTRACT(date from review_answer_timestamp) as review_answer_date,
+ FROM `revou-gfp-365510.Olist.olist_dataset_full` 
+  )
+--  AVG REVIEW PER CITY
+SELECT
+  EXTRACT(year from order_purchase_date) as Year,
+  DATE_TRUNC(order_purchase_date, MONTH) as Order_Purchase_Date,
+  ROUND(AVG(date_diff(order_delivered_customer_date, order_purchase_date, day)),2) as AVG_Delivery_Time,
+  customer_city,
+  COUNT(DISTINCT customer_id) as Total_Customer,
+  COUNT(DISTINCT order_id) as Total_Order,
+  ROUND(AVG(price),2) as AVG_Price,
+  ROUND(AVG(freight_value),2) as AVG_Freight_Value,
+  order_status,
+  payment_type,
+  ROUND(AVG(payment_installments),2) as AVG_Installments,
+  ROUND(AVG(review_score),2) as AVG_Review_Score,
+FROM master_data
+WHERE
+  order_delivered_customer_date is not null 
+  AND order_purchase_date is not null
+GROUP BY 1,2,4,9,10
+ORDER BY 1,2,4,9,10
+
+
+
+
+
+
+
+
+
