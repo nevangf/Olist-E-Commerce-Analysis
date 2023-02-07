@@ -1,0 +1,35 @@
+WITH master_data as 
+  (
+    SELECT 
+      customer_id,
+      customer_city,
+      customer_state,
+      order_id,
+      order_status,
+      EXTRACT(date from order_purchase_timestamp) as order_purchase_date,
+      EXTRACT(date from order_delivered_customer_date) as order_delivered_customer_date,
+      EXTRACT(date from order_estimated_delivery_date) as order_estimated_delivery_date,
+      product_category_name,
+      price,
+      freight_value,
+      payment_type,
+      payment_installments,
+      payment_value,
+      review_score,
+      review_comment_title,
+      seller_city,
+      seller_state,
+      seller_id,
+      EXTRACT(date from review_answer_timestamp) as review_answer_date
+ FROM `revou-gfp-365510.Olist.olist_dataset_full` 
+  )
+SELECT
+  EXTRACT(YEAR FROM order_purchase_date) as Year,
+  seller_state,
+  COUNT(DISTINCT seller_id) as total_seller,
+  COUNT(DISTINCT order_id) as total_order,
+  ROUND(AVG(review_score),2) as AVG_Review,
+  ROUND(AVG(DATE_DIFF(order_delivered_customer_date, order_purchase_date, day)),2) || ' Days' as AVG_Delivery_Time
+FROM master_data
+GROUP BY 1,2
+ORDER BY 1,2
